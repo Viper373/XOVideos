@@ -173,3 +173,13 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 /.idea/.gitignore
+/.idea/csv-editor.xml
+/.idea/dataSources.xml
+/.idea/deployment.xml
+/.idea/vcs.xml
+/.idea/XOVideos.iml
+/.idea/inspectionProfiles/Project_Default.xml
+/.idea/inspectionProfiles/profiles_settings.xml
+/.idea/misc.xml
+/.idea/modules.xml
+/.idea/material_theme_project_new.xml
