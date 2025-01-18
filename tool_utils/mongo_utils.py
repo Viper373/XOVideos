@@ -82,15 +82,15 @@ class MongoUtils:
                 rich_logger.error(f"处理{author.get('author_name')}信息失败：{e}")
 
         if bulk_ops:
-            try:
-                for i in range(0, len(bulk_ops), batch_size):
-                    # 分批执行写入操作，避免一次性写入太多导致内存问题
-                    batch = bulk_ops[i:i + batch_size]
-                    mongo_col.bulk_write(batch)
-                    rich_logger.info(f"已成功初始化 {min(i + batch_size, len(bulk_ops))} 个作者信息")
+            # try:
+            for i in range(0, len(bulk_ops), batch_size):
+                # 分批执行写入操作，避免一次性写入太多导致内存问题
+                batch = bulk_ops[i:i + batch_size]
+                mongo_col.bulk_write(batch)
+                rich_logger.info(f"已成功初始化 {min(i + batch_size, len(bulk_ops))} 个作者信息")
 
-            except Exception as e:
-                rich_logger.error(f"批量写入操作失败: {e}")
+            # except Exception as e:
+            #     rich_logger.error(f"批量写入操作失败: {e}")
 
         else:
             rich_logger.warning("没有有效的操作，跳过写入。")
