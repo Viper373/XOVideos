@@ -26,7 +26,7 @@ jobs:
 
     - name: Update config.cfg with PORNHUB_COOKIES
       run: |
-        sed -i "s|^cookies =.*|cookies = ${{ secrets.PORNHUB_COOKIES }}|" config.cfg
+        sed -i "s|^cookies =.*|cookies = ${{ secrets.PORNHUB_COOKIES }}|" config/pornhub.cfg
       # 使用 GitHub Secrets 中的 PORNHUB_COOKIES 更新配置文件中的 cookies 字段
 
     - name: Run Crawler Script
