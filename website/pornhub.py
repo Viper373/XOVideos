@@ -8,7 +8,6 @@
 # @Software       :PyCharm
 
 import os
-import sys
 import time
 import subprocess
 import configparser
@@ -104,8 +103,8 @@ class Pornhub:
 
     @rich_logger
     def run_pornhub(self):
-        # self.get_author_info()
-        # self.get_video_info()
+        self.get_author_info()
+        self.get_video_info()
         self.get_download_videos()
 
     @rich_logger
