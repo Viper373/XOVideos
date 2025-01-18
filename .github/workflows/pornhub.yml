@@ -21,7 +21,8 @@ jobs:
 
     - name: Install dependencies
       run: |
-        sudo apt-get install ca-certificates  # 安装证书
+        sudo apt-get update  # 更新 apt 包列表
+        sudo apt-get install -y ca-certificates  # 安装根证书
         python -m pip install --upgrade pip  # 更新 pip
         pip install -r requirements.txt  # 安装项目依赖
 
