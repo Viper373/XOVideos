@@ -1,4 +1,4 @@
-name: Pornhub爬取
+name: Pornhub自动爬取
 
 on:
   schedule:
