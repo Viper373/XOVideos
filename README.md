@@ -67,8 +67,7 @@ XOVideos/
 ### 环境要求
 
 - `Python 3.10.11`
-- `MongoDB`
-- `streamlink`
+- `MongoDB`丨MongoDB的免费云服务：[MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
 
 ### 安装依赖
 
