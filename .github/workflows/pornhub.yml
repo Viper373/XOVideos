@@ -1,33 +1,36 @@
-name: pornhub自动爬取
+name: Pornhub爬取
 
 on:
   schedule:
     # 定时任务，每天凌晨 1 点运行一次
     - cron: '0 1 * * *'
-
   workflow_dispatch: # 允许手动触发工作流
 
 jobs:
-  pornhub_crawler:
+  crawl_pornhub:
     runs-on: ubuntu-latest  # 使用最新的 Ubuntu 运行环境
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v2  # 检出代码
 
-    - name: Set up Python 3.10
+    - name: Use Python 3.10
       uses: actions/setup-python@v2
       with:
-        python-version: '3.10'  # 使用 Python 3.10 版本
+        python-version: '3.10.11'  # 使用 Python 3.10.11 版本
 
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip  # 更新 pip
         pip install -r requirements.txt  # 安装项目依赖
 
-    - name: Run main
+    - name: Update config.cfg with PORNHUB_COOKIES
       run: |
-        python main.py  # 根据项目结构，运行相应的爬虫脚本
+        sed -i "s|^cookies =.*|cookies = ${{ secrets.PORNHUB_COOKIES }}|" config.cfg
+      # 使用 GitHub Secrets 中的 PORNHUB_COOKIES 更新配置文件中的 cookies 字段
+
+    - name: Run Crawler Script
+      run: |
+        python main.py  # 根据项目结构，运行爬虫脚本
       env:
-        # 如果有敏感信息，例如 Cookies 或其他配置，可以使用 GitHub Secrets 存储
-        COOKIES: ${{ secrets.PORNHUB_COOKIES }}
+        MONGODB_URI: ${{ secrets.MONGODB_URI }}  # 从 GitHub Secrets 中获取 MongoDB URI
