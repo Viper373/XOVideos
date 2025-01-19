@@ -1,9 +1,9 @@
 name: Pornhub自动爬取
 
 on:
-  schedule:
-    # 定时任务，每天凌晨 1 点运行一次
-    - cron: '0 1 * * *'
+  # schedule:
+  #   # 定时任务，每天凌晨 1 点运行一次
+  #   - cron: '0 1 * * *'
   workflow_dispatch: # 允许手动触发工作流
 
 jobs:
