@@ -69,6 +69,7 @@ XOVideos/
 - `Python 3.10.11`
 - `MongoDB`丨MongoDB的免费云服务：[MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
   - **注意**：确保MongoDB服务IP地址在白名单中，或者关闭IP白名单功能（添加0.0.0.0/0到白名单）。
+- `streamlink`
 
 ### 安装依赖
 
