@@ -17,5 +17,5 @@ class ProxyUtils:
         proxy_host = '127.0.0.1'
         proxy_port = 7890
         proxies['http'] = f'http://{proxy_host}:{proxy_port}'
-        proxies['https'] = f'https://{proxy_host}:{proxy_port}'
+        proxies['https'] = f'http://{proxy_host}:{proxy_port}'
         return proxies

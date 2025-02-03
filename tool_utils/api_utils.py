@@ -9,20 +9,20 @@ import time
 import requests
 from requests.exceptions import RequestException
 from tool_utils.log_utils import RichLogger
-from tool_utils.proxy_utils import ProxyUtils
 
 rich_logger = RichLogger()
-proxy_utils = ProxyUtils()
 
 
 class APIUtils:
 
     def __init__(self):
-        self.proxies = proxy_utils.get_proxy()
+        pass
 
-    def requests_retry(self, url, headers=None, cookies=None, params=None, retries=5, delay=2, timeout=30):
+    @staticmethod
+    def requests_retry(url, headers=None, cookies=None, params=None, proxies=None, retries=5, delay=2, timeout=30):
         """
         发起请求并加入重试机制。
+        :param proxies: 代理
         :param url: 请求的URL
         :param headers: 请求头
         :param cookies: 请求Cookies
@@ -35,7 +35,7 @@ class APIUtils:
         attempt = 0
         while attempt < retries:
             try:
-                response = requests.get(url, headers=headers, cookies=cookies, params=params, proxies=self.proxies, timeout=timeout)
+                response = requests.get(url, headers=headers, cookies=cookies, params=params, proxies=proxies, timeout=timeout)
                 if response.status_code == 200:
                     return response
                 else:
@@ -54,7 +54,3 @@ class APIUtils:
 
 if __name__ == '__main__':
     api_utils = APIUtils()
-    # gscType = 'Not found (404)'
-    # projectSource = 'aicoloringpages.net'
-    # date = api_utils.get_recent_time(gscType=gscType, projectSource=projectSource)
-    # print(type(date))

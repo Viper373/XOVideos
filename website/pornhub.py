@@ -20,12 +20,14 @@ from tool_utils.log_utils import RichLogger
 from tool_utils.string_utils import StringUtils
 from tool_utils.api_utils import APIUtils
 from tool_utils.mongo_utils import MongoUtils
+from tool_utils.proxy_utils import ProxyUtils
 
 
 rich_logger = RichLogger()
 string_utils = StringUtils()
 api_utils = APIUtils()
 mongo_utils = MongoUtils()
+proxy_utils = ProxyUtils()
 
 
 class Pornhub:
@@ -101,6 +103,7 @@ class Pornhub:
             'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 Edg/131.0.0.0',
         }
         self.cookies = string_utils.load_cookies(ph_config.get('Cookies', 'COOKIES'))
+        self.proxies = proxy_utils.get_proxy()
 
     @rich_logger
     def run_pornhub(self):
@@ -118,7 +121,7 @@ class Pornhub:
 
         try:
             # 发起请求获取订阅页面内容
-            response = api_utils.requests_retry(url=self.sub_url, headers=self.pre_headers, cookies=self.cookies, timeout=10)
+            response = api_utils.requests_retry(url=self.sub_url, headers=self.pre_headers, cookies=self.cookies, proxies=self.proxies, timeout=10)
             if response.status_code != 200:
                 rich_logger.exception(f"获取订阅作者信息失败: {response.status_code}丨{response.text}")
                 return  # 返回空列表，表示未成功获取数据
@@ -188,12 +191,12 @@ class Pornhub:
                 video_counts = 0  # 用于统计获取的视频数量
                 video_list = []  # 用于存储视频信息
 
-                response = api_utils.requests_retry(url=author_url, headers=self.pre_headers, cookies=self.cookies, timeout=10)
+                response = api_utils.requests_retry(url=author_url, headers=self.pre_headers, cookies=self.cookies, proxies=self.proxies, timeout=10)
                 tree = html.fromstring(response.content)
                 total_pages = self.get_total_pages(tree)
                 for i in range(1, total_pages + 1):
                     page_url = author_url if i == 1 else f"{author_url}?page={i}"
-                    response = api_utils.requests_retry(url=page_url, headers=self.pre_headers, cookies=self.cookies, timeout=10)
+                    response = api_utils.requests_retry(url=page_url, headers=self.pre_headers, cookies=self.cookies, proxies=self.proxies, timeout=10)
                     tree = html.fromstring(response.content)
                     video_counts += int(tree.xpath('count(//ul[@id="mostRecentVideosSection"]//li)'))  # 累加每页视频数量
 
@@ -214,7 +217,7 @@ class Pornhub:
                 rich_logger.info(f"抓取{author_name} {pages_to_scrape} 页视频")
                 for page in range(1, pages_to_scrape + 1):
                     page_url = author_url if page == 1 else f"{author_url}?page={page}"
-                    page_response = api_utils.requests_retry(url=page_url, headers=self.pre_headers, cookies=self.cookies, timeout=30)
+                    page_response = api_utils.requests_retry(url=page_url, headers=self.pre_headers, cookies=self.cookies, proxies=self.proxies, timeout=30)
 
                     if page_response.status_code != 200:
                         rich_logger.warning(f"获取第{page}页失败，跳过该页")
@@ -343,7 +346,7 @@ class Pornhub:
         attempt = 0
         while attempt < retries:
             try:
-                response = api_utils.requests_retry(url=video_url, headers=self.detail_headers, cookies=self.cookies, timeout=10)
+                response = api_utils.requests_retry(url=video_url, headers=self.detail_headers, cookies=self.cookies, proxies=self.proxies, timeout=10)
                 if response.status_code == 200:
                     # 下载链接解析
                     download_url = unquote(string_utils.extract_video_download_url(response.text).replace('\\/', '/'))
