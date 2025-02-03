@@ -9,17 +9,18 @@ import time
 import requests
 from requests.exceptions import RequestException
 from tool_utils.log_utils import RichLogger
+from tool_utils.proxy_utils import ProxyUtils
 
 rich_logger = RichLogger()
+proxy_utils = ProxyUtils()
 
 
 class APIUtils:
 
     def __init__(self):
-        pass
+        self.proxies = proxy_utils.get_proxy()
 
-    @staticmethod
-    def requests_retry(url, headers=None, cookies=None, params=None, retries=5, delay=2, timeout=30):
+    def requests_retry(self, url, headers=None, cookies=None, params=None, retries=5, delay=2, timeout=30):
         """
         发起请求并加入重试机制。
         :param url: 请求的URL
@@ -34,7 +35,7 @@ class APIUtils:
         attempt = 0
         while attempt < retries:
             try:
-                response = requests.get(url, headers=headers, cookies=cookies, params=params, timeout=timeout)
+                response = requests.get(url, headers=headers, cookies=cookies, params=params, proxies=self.proxies, timeout=timeout)
                 if response.status_code == 200:
                     return response
                 else:

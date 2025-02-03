@@ -21,6 +21,7 @@ from tool_utils.string_utils import StringUtils
 from tool_utils.api_utils import APIUtils
 from tool_utils.mongo_utils import MongoUtils
 
+
 rich_logger = RichLogger()
 string_utils = StringUtils()
 api_utils = APIUtils()
