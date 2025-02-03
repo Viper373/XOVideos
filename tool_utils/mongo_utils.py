@@ -19,8 +19,7 @@ rich_logger = RichLogger()
 class MongoConfig:
     def __init__(self):
         # MongoDB 连接地址
-        # self.mongo_connect_host = os.getenv('MONGODB_URI')
-        self.mongo_connect_host = "mongodb+srv://Viper3:ShadowZed666@pythonproject.1rxku.mongodb.net/?retryWrites=true&w=majority&appName=PythonProject"
+        self.mongo_connect_host = os.getenv('MONGODB_URI')
 
 
 class MongoUtils:
