@@ -210,6 +210,8 @@ class Pornhub:
 
                 video_count_diff = video_counts - len(mongo_video_list)
                 if abs(video_count_diff) <= 40:
+                    if video_counts == 0:
+                        pass
                     pages_to_scrape = 1  # 视频数量差异小于等于40，爬取第一页
                 else:
                     pages_to_scrape = (abs(video_count_diff) // 40) + 1  # 根据差异计算页数
@@ -298,6 +300,14 @@ class Pornhub:
             author_name = video_infos.get('作者名称')
             video_title = video_infos.get('视频标题')
             download_path = os.path.join(self.video_dir, author_name, f"{video_title}.mp4")
+
+            # 判断文件是否已经存在
+            if os.path.exists(download_path):
+                # 文件已经存在，跳过下载
+                rich_logger.info(f"{download_path} 已经存在，跳过下载。")
+                mongo_utils.update_download_status(video_infos, 1)  # 修改MongoDB中该视频的下载状态为 1
+                return
+
             self.command[1] = download_url
             self.command[-1] = download_path
 
