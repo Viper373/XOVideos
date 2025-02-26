@@ -21,6 +21,7 @@ from tool_utils.string_utils import StringUtils
 from tool_utils.api_utils import APIUtils
 from tool_utils.mongo_utils import MongoUtils
 from tool_utils.proxy_utils import ProxyUtils
+from tool_utils.file_utils import S3Utils
 
 
 rich_logger = RichLogger()
@@ -28,6 +29,7 @@ string_utils = StringUtils()
 api_utils = APIUtils()
 mongo_utils = MongoUtils()
 proxy_utils = ProxyUtils()
+s3_utils = S3Utils()
 
 
 class Pornhub:
@@ -201,7 +203,7 @@ class Pornhub:
                     video_counts += int(tree.xpath('count(//ul[@id="mostRecentVideosSection"]//li)'))  # 累加每页视频数量
 
                 # 判断视频数量是否需要爬取
-                if len(mongo_video_list) == mongo_video_count == video_counts:
+                if len(mongo_video_list) == int(mongo_video_count) == video_counts:
                     rich_logger.info(f"{author_name} 的视频数量未更新，跳过该作者")
                     continue  # 跳过该作者
 
@@ -305,6 +307,7 @@ class Pornhub:
             if os.path.exists(download_path):
                 # 文件已经存在，跳过下载
                 rich_logger.info(f"{download_path} 已经存在，跳过下载。")
+                s3_utils.upload_file(download_path)
                 mongo_utils.update_download_status(video_infos, 1)  # 修改MongoDB中该视频的下载状态为 1
                 return
 
@@ -322,6 +325,7 @@ class Pornhub:
             else:
                 # 下载成功
                 rich_logger.info(f"下载成功：{author_name} - {video_title}")
+                s3_utils.upload_file(download_path)
                 mongo_utils.update_download_status(video_infos, 1)
 
         except Exception as e:
