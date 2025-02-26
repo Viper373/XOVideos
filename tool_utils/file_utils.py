@@ -16,14 +16,10 @@ rich_logger = RichLogger()
 
 class S3Utils:
     def __init__(self):
-        s3endpoint = 'https://s3.bitiful.net'  # 请填入控制台 “Bucket 设置” 页面底部的 “Endpoint” 标签中的信息
-        s3endpoint = os.getenv('S3_ENDPOINT')
-        s3region = 'cn-east-1'
+        s3endpoint = os.getenv('S3_ENDPOINT')  # 请填入控制台 “Bucket 设置” 页面底部的 “Endpoint” 标签中的信息
         s3region = os.getenv('S3_REGION')
-        s3accessKeyId = 'CYVLn8lpmCoSjACGCviO3gOg'  # 请到控制台创建子账户，并为子账户创建相应 accessKey
-        s3accessKeyId = os.getenv('S3_ACCESS_KEY')
-        s3SecretKeyId = 'gEKcmCVe91aV5jZ14MfBh3GcYXKHMWQ'  # ！！切记，创建子账户时，需要手动为其分配具体权限！！
-        s3SecretKeyId = os.getenv('S3_SECRET_KEY')
+        s3accessKeyId = os.getenv('S3_ACCESS_KEY')  # 请到控制台创建子账户，并为子账户创建相应 accessKey
+        s3SecretKeyId = os.getenv('S3_SECRET_KEY')  # ！！切记，创建子账户时，需要手动为其分配具体权限！！
         self.bucket = 'viper3'
         self.s3_client = boto3.client(
             's3',
