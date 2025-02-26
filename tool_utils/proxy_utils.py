@@ -7,6 +7,9 @@
 # @Index          :https://viper3.top
 # @Blog           :https://blog.viper3.top
 
+import requests
+
+
 class ProxyUtils:
     def __init__(self):
         pass
@@ -18,4 +21,4 @@ class ProxyUtils:
         proxy_port = 7890
         proxies['http'] = f'http://{proxy_host}:{proxy_port}'
         proxies['https'] = f'http://{proxy_host}:{proxy_port}'
-        return proxies
+        return None
