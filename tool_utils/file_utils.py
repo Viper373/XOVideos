@@ -43,13 +43,23 @@ class S3Utils:
         try:
             # 统一替换所有路径分隔符为 S3 适用的正斜杠
             unified_path = file_path.replace("\\", "/")
-            # 强制校验路径中必须包含 '/videos/' 目录
+
+            # 强制校验路径中必须包含 '/XOVideos/videos/' 目录
             if "/XOVideos/videos/" not in unified_path:
                 raise ValueError("文件路径必须包含 '/XOVideos/videos/' 目录作为根节点")
 
-            # 分割路径并定位 XOVideos 的位置
+            # 分割路径并定位第二个 XOVideos 的位置
             parts = unified_path.split("/")
-            videos_index = parts.index("XOVideos")  # 找到第一个 'XOVideos' 的位置
+
+            # 查找所有 XOVideos 的索引位置
+            xov_indices = [i for i, part in enumerate(parts) if part == "XOVideos"]
+
+            # 检查是否有至少两个 XOVideos
+            if len(xov_indices) < 2:
+                raise ValueError("路径中需要包含至少两个 'XOVideos' 目录")
+
+            # 取第二个 XOVideos 的索引
+            videos_index = xov_indices  # 索引从 0 开始，xov_indices 是第二个出现的位置
 
             # 组合 S3 对象键（XOVideos 之后的路径部分）
             s3_key = "/".join(parts[videos_index:])
