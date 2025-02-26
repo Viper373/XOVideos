@@ -42,18 +42,3 @@ class StringUtils:
         except Exception as e:
             rich_logger.exception(f"提取视频链接时发生错误: {e}")
         return None
-
-    @rich_logger
-    def load_cookies(self, cookies_str: str):
-        """
-        将 cfg 读取的 cookies 字符串转换为字典
-        :return: cookies 字典
-        """
-        cookies = {}
-        for cookie in cookies_str.split(';'):
-            cookie = cookie.strip()  # 去除前后空格
-            if '=' in cookie:
-                key, value = cookie.split('=', 1)
-                cookies[key] = value
-
-        return cookies
