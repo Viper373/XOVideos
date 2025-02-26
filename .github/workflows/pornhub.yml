@@ -8,7 +8,7 @@ on:
 
 jobs:
   crawl_pornhub:
-    runs-on: ubuntu-latest  # 使用最新的 Ubuntu 运行环境
+    runs-on: ubuntu-22.04  # 使用22.04的 Ubuntu 运行环境
 
     steps:
     - name: Checkout code
@@ -25,11 +25,6 @@ jobs:
         sudo apt-get install -y ca-certificates  # 安装根证书
         python -m pip install --upgrade pip  # 更新 pip
         pip install -r requirements.txt  # 安装项目依赖
-
-    - name: Update config.cfg with PORNHUB_COOKIES
-      run: |
-        sed -i "s|^cookies =.*|cookies = ${{ secrets.PORNHUB_COOKIES }}|" config/pornhub.cfg
-      # 使用 GitHub Secrets 中的 PORNHUB_COOKIES 更新配置文件中的 cookies 字段
 
     - name: Run Crawler Script
       run: |
