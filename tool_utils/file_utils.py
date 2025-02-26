@@ -86,7 +86,15 @@ class S3Utils:
             rich_logger.info(f"开始上传缤纷云: {s3_key}，文件大小: {size_str}")
 
             # 执行上传
-            self.s3_client.upload_file(file_path, self.bucket, s3_key)
+            self.s3_client.upload_file(
+                file_name=file_path,
+                bucket=self.bucket,
+                key=s3_key,
+                ExtraArgs={
+                    "ContentType": "video/mp4",
+                    "ContentDisposition": "inline"  # 允许浏览器预览
+                }
+            )
             end_time = time.time()
             rich_logger.info(f"缤纷云上传成功://{self.bucket}/{s3_key}丨耗时：{end_time - start_time:.2f} 秒")
             os.remove(file_path)
