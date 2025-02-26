@@ -36,3 +36,8 @@ jobs:
         python main.py  # 根据项目结构，运行爬虫脚本
       env:
         MONGODB_URI: ${{ secrets.MONGODB_URI }}  # 从 GitHub Secrets 中获取 MongoDB URI
+        S3_ENDPOINT: ${{ secrets.S3_ENDPOINT }}  # 从 GitHub Secrets 中获取 S3 Endpoint
+        S3_REGION: ${{ secrets.S3_REGION }}  # 从 GitHub Secrets 中获取 S3 Region
+        S3_ACCESS_KEY: ${{ secrets.S3_ACCESS_KEY }}  # 从 GitHub Secrets 中获取 S3 Access Key
+        S3_SECRET_KEY: ${{ secrets.S3_SECRET_KEY }}  # 从 GitHub Secrets 中获取 S3 Secret Key
+        S3_BUCKET: ${{ secrets.S3_BUCKET }}  # 从 GitHub Secrets 中获取 S3 Bucket
