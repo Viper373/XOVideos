@@ -54,12 +54,20 @@ XOVideos/
 
 ## Github Actions 部署 🚀
 - **Fork** 本项目
-- 添加 **Cookies** 到 **GitHub Secrets**
+- 添加环境变量（**GitHub Secrets**）
+
+| 变量名           | 值类型  | 说明              |
+|---------------|------|-----------------|
+| Cookies       | Text | pornhub的Cookies |
+| MONGO_URI     | Text | MongoDB的连接URI   |
+| S3_ENDPOINT   | Text | S3的Endpoint     |
+| S3_REGION     | Text | S3的Region       |
+| S3_ACCESS_KEY | Text | S3的Access Key   |
+| S3_SECRET_KEY | Text | S3的Secret Key   |
 - 在仓库页面，点击 **Settings（设置）**按钮。 
 - 在左侧菜单中，找到 **Secrets and variables**，然后选择 **Actions**。 
 - 点击 **New repository secret** 按钮，添加新的密钥： 
-- Name: PORNHUB_COOKIES
-- Value: 用户将其从浏览器中复制的 **Cookies** 内容粘贴到这个字段中。 
+
 - 点击 **Add secret** 完成添加。
 
 ## 安装与使用 🚀
