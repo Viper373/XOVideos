@@ -8,6 +8,7 @@
 import os
 import time
 import boto3
+import subprocess
 from botocore.exceptions import ClientError
 from tool_utils.log_utils import RichLogger
 
@@ -31,6 +32,7 @@ class S3Utils:
 
     def upload_file(self, file_path):
         """
+        上传文件至缤纷云S4
         自动跳过已存在的文件
         本地文件可读性校验
         路径合规性检查
@@ -112,3 +114,43 @@ class S3Utils:
             rich_logger.exception(f"未知错误: {str(e)}丨耗时：{end_time - start_time:.2f} 秒")
             os.remove(file_path)
             return False
+
+    @staticmethod
+    def ffmpeg_video_streaming(input_file):
+        """
+        使用FFmpeg将视频转换为H.264格式，并进行流优化处理，使其能够流式传输。
+
+        参数:
+        - input_file: 输入的视频文件路径
+        - output_file: 输出的优化后的视频文件路径
+
+        返回:
+        - 成功: 返回输出文件的路径
+        - 失败: 返回 None
+        """
+        output_file = input_file.replace('.mp4', 'h264.mp4')
+        command = [
+            'ffmpeg',
+            '-i', input_file,
+            '-c:v', 'libx264',  # 使用H.264编解码器
+            'crf', '0',  # 最低 CRF 值（0-51，0 为无损，通常 18-28 是合理范围）
+            '-c:a', 'copy',  # 保留原始音频
+            '-movflags', 'faststart',  # 使视频文件头放在文件开始处，优化流媒体播放
+        ]
+
+        try:
+            # 使用 subprocess.run 执行 FFmpeg 命令，并捕获 stdout 和 stderr 以便调试
+            subprocess.run(command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+            rich_logger.info(f"视频优化和H.264转换完成: {output_file}")
+            os.remove(input_file)  # 删除原视频，保留流式优化视频
+            os.rename(output_file, input_file)  #
+            return output_file
+        except subprocess.CalledProcessError as e:
+            # 捕获 FFmpeg 命令的返回码和输出
+            rich_logger.exception(f"视频优化失败: {output_file}\n错误信息: {e.stderr.decode('utf-8')}")
+            return None
+        except Exception as e:
+            # 捕获其他意外错误
+            rich_logger.error(f"未知错误: {e}")
+            return None
