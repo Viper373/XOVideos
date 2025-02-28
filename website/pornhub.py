@@ -308,7 +308,7 @@ class Pornhub:
                 # 文件已经存在，跳过下载
                 rich_logger.info(f"{download_path} 已经存在，跳过下载。")
                 h264_video_path = s3_utils.ffmpeg_video_streaming(input_file=download_path)
-                s3_utils.upload_file(h264_video_path)
+                s3_utils.upload_file(file_path=h264_video_path)
                 mongo_utils.update_download_status(video_infos, 1)  # 修改MongoDB中该视频的下载状态为 1
                 return
 

@@ -89,7 +89,7 @@ class S3Utils:
 
             # 执行上传
             self.s3_client.upload_file(
-                file_name=file_path,
+                filename=file_path,
                 bucket=self.bucket,
                 key=s3_key,
                 ExtraArgs={
