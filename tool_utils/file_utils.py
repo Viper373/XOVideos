@@ -59,7 +59,7 @@ class S3Utils:
                 # HEAD 请求检查对象元数据（低开销）
                 self.s3_client.head_object(Bucket=self.bucket, Key=s3_key)
                 end_time = time.time()
-                rich_logger.info(f"缤纷云文件已存在，跳过上传://{self.bucket}/{s3_key}丨耗时：{end_time - start_time:.2f} 秒")
+                rich_logger.info(f"缤纷云文件已存在，跳过上传:{self.bucket}/{s3_key}丨耗时：{end_time - start_time:.2f} 秒")
                 os.remove(file_path)
                 return True
             except ClientError as e:
@@ -109,11 +109,12 @@ class S3Utils:
 
         except Exception as e:
             end_time = time.time()
-            rich_logger.exception(f"未知错误: {str(e)}丨耗时：{end_time - start_time:.2f} 秒")
+            rich_logger.exception(f"缤纷云未知错误: {str(e)}丨耗时：{end_time - start_time:.2f} 秒")
             os.remove(file_path)
             return False
 
     @staticmethod
+    @rich_logger
     def ffmpeg_video_streaming(input_file):
         """
         使用FFmpeg将视频转换为H.264格式，并进行流优化处理，使其能够流式传输。
