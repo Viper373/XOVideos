@@ -17,6 +17,7 @@ import concurrent.futures
 from functools import wraps
 from datetime import datetime
 from rich.logging import RichHandler
+from rich.markup import escape
 from logging.handlers import RotatingFileHandler
 
 # 创建全局线程池
@@ -286,7 +287,8 @@ class RichLogger:
                 self.logger.info(f"⏹ 结束 '{func_name}' | [耗时 {elapsed_time:.4f}s]", stacklevel=stacklevel)
                 return result
             except Exception as e:
-                self.logger.exception(f"❌ 出现异常 '{func_name}': {e}", stacklevel=stacklevel)
+                self.logger.exception(
+                    f"❌ 出现异常 '{escape(func_name)}': {escape(str(e))}", stacklevel=stacklevel)
                 raise
 
         return wrapper
