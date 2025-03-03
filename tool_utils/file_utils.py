@@ -8,6 +8,7 @@
 import os
 import time
 import boto3
+import mimetypes
 import subprocess
 from botocore.exceptions import ClientError
 from tool_utils.log_utils import RichLogger
@@ -31,86 +32,92 @@ class S3Utils:
         )
 
     @rich_logger
-    def s4_upload_file(self, file_path):
-        """
-        上传文件至缤纷云S4
-        自动跳过已存在的文件
-        本地文件可读性校验
-        路径合规性检查
-        网络重试机制
-        :param file_path: 本地文件路径
-        :return: None
-        """
+    def s4_upload_file(self, file_path, delete_on_success=True, delete_on_failure=False):
         start_time = time.time()
 
         try:
+            # 路径合规性检查
+            if not os.path.isfile(file_path):
+                rich_logger.error(f"文件不存在或不可读: {file_path}")
+                return False
+
             # 分割路径
             parts = file_path.split("/")
-
-            # 查找所有 "XOVideos" 的位置
             xovideos_indices = [i for i, part in enumerate(parts) if part == "XOVideos"]
 
-            # 取第二个出现的 XOVideos 位置
+            # 防御性检查
+            if len(xovideos_indices) < 2:
+                rich_logger.error(f"路径中未找到足够的 'XOVideos' 目录: {file_path}")
+                return False
             videos_index = xovideos_indices[1]
-
-            # 组合 S3 对象键（XOVideos 之后的路径部分）
             s3_key = "/".join(parts[videos_index:])
+
+            # 检查文件是否存在
             try:
-                # HEAD 请求检查对象元数据（低开销）
                 self.s3_client.head_object(Bucket=self.bucket, Key=s3_key)
-                end_time = time.time()
-                rich_logger.info(f"缤纷云文件已存在，跳过上传:{self.bucket}/{s3_key}丨耗时：{end_time - start_time:.2f} 秒")
-                os.remove(file_path)
+                rich_logger.info(f"文件已存在，跳过上传: {s3_key}")
+
+                if delete_on_success:
+                    try:
+                        os.remove(file_path)
+                    except OSError as e:
+                        rich_logger.error(f"删除本地文件失败: {e}")
                 return True
             except ClientError as e:
                 error_code = e.response['Error'].get('Code', 'Unknown')
                 if error_code != '404':
-                    # 非"文件不存在"错误（如权限问题），直接抛出异常
                     raise
-            # 获取文件大小并记录日志
-            file_size = os.path.getsize(file_path)
 
-            # 智能转换文件大小单位
+            # 动态检测 MIME 类型
+            content_type, _ = mimetypes.guess_type(file_path)
+            extra_args = {
+                "ContentType": content_type or "application/octet-stream",
+                "ContentDisposition": "inline"
+            }
+
+            # 记录文件大小
+            file_size = os.path.getsize(file_path)
             size_units = ['B', 'KB', 'MB', 'GB', 'TB']
             size_index = 0
             while file_size >= 1024 and size_index < len(size_units) - 1:
                 file_size /= 1024.0
                 size_index += 1
-
-            # 根据单位类型调整显示精度
-            if size_index == 0:  # 字节
-                size_str = f"{int(file_size)} {size_units[size_index]}"
-            else:
-                size_str = f"{file_size:.2f} {size_units[size_index]}".replace(".00", "")  # 优化整数显示
-
-            rich_logger.info(f"开始上传缤纷云: {s3_key}，文件大小: {size_str}")
+            size_str = f"{int(file_size)} {size_units[size_index]}" if size_index == 0 else f"{file_size:.2f} {size_units[size_index]}".rstrip('0').rstrip('.')
+            rich_logger.info(f"开始上传: {s3_key}，大小: {size_str}")
 
             # 执行上传
             self.s3_client.upload_file(
-                filename=file_path,
-                bucket=self.bucket,
-                key=s3_key,
-                ExtraArgs={
-                    "ContentType": "video/mp4",
-                    "ContentDisposition": "inline"  # 允许浏览器预览
-                }
+                Filename=file_path,
+                Bucket=self.bucket,
+                Key=s3_key,
+                ExtraArgs=extra_args
             )
-            end_time = time.time()
-            rich_logger.info(f"缤纷云上传成功:{self.bucket}/{s3_key}丨耗时：{end_time - start_time:.2f} 秒")
-            os.remove(file_path)
+            rich_logger.info(f"上传成功: {s3_key}")
+
+            # 上传成功后删除本地文件
+            if delete_on_success:
+                try:
+                    os.remove(file_path)
+                except OSError as e:
+                    rich_logger.error(f"删除本地文件失败: {e}")
             return True
 
         except ClientError as e:
             error_code = e.response['Error'].get('Code', 'Unknown')
-            end_time = time.time()
-            rich_logger.error(f"缤纷云操作失败 ({error_code}): {str(e)}丨耗时：{end_time - start_time:.2f} 秒")
-            os.remove(file_path)
+            rich_logger.error(f"上传失败 ({error_code}): {e}")
+            if delete_on_failure:
+                try:
+                    os.remove(file_path)
+                except OSError as err:
+                    rich_logger.error(f"删除本地文件失败: {err}")
             return False
-
         except Exception as e:
-            end_time = time.time()
-            rich_logger.exception(f"缤纷云未知错误: {str(e)}丨耗时：{end_time - start_time:.2f} 秒")
-            os.remove(file_path)
+            rich_logger.exception(f"未知错误: {e}")
+            if delete_on_failure:
+                try:
+                    os.remove(file_path)
+                except OSError as err:
+                    rich_logger.error(f"删除本地文件失败: {err}")
             return False
 
     @staticmethod
