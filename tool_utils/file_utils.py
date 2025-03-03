@@ -21,7 +21,7 @@ class S3Utils:
         s3region = os.getenv('S3_REGION')
         s3accessKeyId = os.getenv('S3_ACCESS_KEY')  # 请到控制台创建子账户，并为子账户创建相应 accessKey
         s3SecretKeyId = os.getenv('S3_SECRET_KEY')  # ！！切记，创建子账户时，需要手动为其分配具体权限！！
-        self.bucket = 'viper3'
+        self.bucket = os.getenv('S3_BUCKET')  # 请填入控制台 “Bucket 列表” 页面的 “Bucket 名称”
         self.s3_client = boto3.client(
             's3',
             aws_access_key_id=s3accessKeyId,
