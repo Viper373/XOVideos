@@ -44,11 +44,8 @@ class S3Utils:
         start_time = time.time()
 
         try:
-            # 统一替换所有路径分隔符为 S3 适用的正斜杠
-            unified_path = file_path.replace("\\", "/")
-
             # 分割路径
-            parts = unified_path.split("/")
+            parts = file_path.split("/")
 
             # 查找所有 "XOVideos" 的位置
             xovideos_indices = [i for i, part in enumerate(parts) if part == "XOVideos"]
