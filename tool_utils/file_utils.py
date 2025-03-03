@@ -30,7 +30,7 @@ class S3Utils:
             region_name=s3region
         )
 
-    def upload_file(self, file_path):
+    def s4_upload_file(self, file_path):
         """
         上传文件至缤纷云S4
         自动跳过已存在的文件

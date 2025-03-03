@@ -252,7 +252,7 @@ class Pornhub:
     @rich_logger
     def get_download_videos(self, collection="pornhub"):
         """
-        获取视频下载链接并推送到 Redis 队列
+        获取视频下载链接并进行实时下载
         :param collection: 集合名称，默认为 'pornhub'
         :return: None
         """
@@ -308,7 +308,7 @@ class Pornhub:
                 # 文件已经存在，跳过下载
                 rich_logger.info(f"{download_path} 已经存在，跳过下载。")
                 h264_video_path = s3_utils.ffmpeg_video_streaming(input_file=download_path)
-                s3_utils.upload_file(file_path=h264_video_path)
+                s3_utils.s4_upload_file(file_path=h264_video_path)
                 mongo_utils.update_download_status(video_infos, 1)  # 修改MongoDB中该视频的下载状态为 1
                 return
 
@@ -326,7 +326,7 @@ class Pornhub:
             else:
                 # 下载成功
                 rich_logger.info(f"下载成功：{author_name} - {video_title}")
-                s3_utils.upload_file(download_path)
+                s3_utils.s4_upload_file(file_path=download_path)
                 mongo_utils.update_download_status(video_infos, 1)
 
         except Exception as e:
