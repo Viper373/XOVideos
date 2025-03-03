@@ -30,6 +30,7 @@ class S3Utils:
             region_name=s3region
         )
 
+    @rich_logger
     def s4_upload_file(self, file_path):
         """
         上传文件至缤纷云S4
