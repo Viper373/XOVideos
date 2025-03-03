@@ -96,7 +96,7 @@ class S3Utils:
                 }
             )
             end_time = time.time()
-            rich_logger.info(f"缤纷云上传成功://{self.bucket}/{s3_key}丨耗时：{end_time - start_time:.2f} 秒")
+            rich_logger.info(f"缤纷云上传成功:{self.bucket}/{s3_key}丨耗时：{end_time - start_time:.2f} 秒")
             os.remove(file_path)
             return True
 
