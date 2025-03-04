@@ -225,7 +225,7 @@ class RichLogger:
         error_json_handler.setFormatter(json_formatter)
 
         # Rich 处理器（控制台）
-        rich_handler = RichHandler(rich_tracebacks=True, markup=True)  # markup支持富文本
+        rich_handler = RichHandler(rich_tracebacks=True, markup=False)  # markup支持富文本
         rich_handler.setLevel(getattr(logging, "INFO", logging.INFO))
         rich_formatter = logging.Formatter(
             "{message}",
