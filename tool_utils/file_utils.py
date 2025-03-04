@@ -141,7 +141,6 @@ class S3Utils:
             'ffmpeg',
             '-i', input_file,
             '-c:v', 'libx264',  # 使用H.264编解码器
-            '-crf', '0',  # 最低 CRF 值（0-51，0 为无损，通常 18-28 是合理范围）
             '-c:a', 'copy',  # 保留原始音频
             '-movflags', 'faststart',  # 使视频文件头放在文件开始处，优化流媒体播放
             output_file
