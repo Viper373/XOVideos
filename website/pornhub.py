@@ -13,7 +13,6 @@ import subprocess
 import configparser
 import requests
 from lxml import html
-from rich.markup import escape
 from urllib.parse import urljoin
 from pathvalidate import sanitize_filename
 from urllib.parse import unquote
@@ -291,7 +290,7 @@ class Pornhub:
                         self.download_video(video_infos, download_url)
 
         except Exception as e:
-            rich_logger.error(f"下载视频时发生错误: {escape(str(e))}")
+            rich_logger.error(f"下载视频时发生错误: {e}")
 
     @rich_logger
     def download_video(self, video_infos, download_url):
