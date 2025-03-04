@@ -41,8 +41,10 @@ class S3Utils:
                 rich_logger.error(f"文件不存在或不可读: {file_path}")
                 return False
 
+            # 将路径替换为统一的单斜杠
+            unified_path = file_path.replace("\\", "/")
             # 分割路径
-            parts = file_path.split("/")
+            parts = unified_path.split("/")
             xovideos_indices = [i for i, part in enumerate(parts) if part == "XOVideos"]
 
             # 防御性检查

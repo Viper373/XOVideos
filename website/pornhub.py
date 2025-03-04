@@ -208,7 +208,7 @@ class Pornhub:
                     continue  # 跳过该作者
 
                 # 如果视频数量不一致，开始爬取
-                rich_logger.info(f"抓取 {author_name} 的视频数据：数据库视频数量：{mongo_video_count}，请求返回视频数量：{video_counts}")
+                rich_logger.info(f"{author_name}数据库视频数量：[{mongo_video_count}]，源视频数量：[{video_counts}]丨开始爬取")
 
                 video_count_diff = video_counts - len(mongo_video_list)
                 if abs(video_count_diff) <= 40:
@@ -216,9 +216,9 @@ class Pornhub:
                         pass
                     pages_to_scrape = 1  # 视频数量差异小于等于40，爬取第一页
                 else:
-                    pages_to_scrape = (abs(video_count_diff) // 40) + 1  # 根据差异计算页数
+                    pages_to_scrape = (video_count_diff // 40) + 1  # 根据差异计算页数
 
-                rich_logger.info(f"抓取{author_name} {pages_to_scrape} 页视频")
+                rich_logger.info(f"爬取{author_name} {pages_to_scrape} 页视频")
                 for page in range(1, pages_to_scrape + 1):
                     page_url = author_url if page == 1 else f"{author_url}?page={page}"
                     page_response = api_utils.requests_retry(url=page_url, headers=self.pre_headers, cookies=self.cookies, proxies=self.proxies, timeout=30)
