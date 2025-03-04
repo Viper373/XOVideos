@@ -64,6 +64,7 @@ XOVideos/
 | S3_REGION     | Text | S3的Region       |
 | S3_ACCESS_KEY | Text | S3的Access Key   |
 | S3_SECRET_KEY | Text | S3的Secret Key   |
+| S3_BUCKET     | Text | S3的Bucket       |
 - 在仓库页面，点击 **Settings（设置）**按钮。 
 - 在左侧菜单中，找到 **Secrets and variables**，然后选择 **Actions**。 
 - 点击 **New repository secret** 按钮，添加新的密钥： 
