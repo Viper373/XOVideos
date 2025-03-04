@@ -153,8 +153,8 @@ class S3Utils:
 
             rich_logger.info(f"视频优化和H.264转换完成: {output_file}")
             os.remove(input_file)  # 删除原视频，保留流式优化视频
-            os.rename(output_file, input_file)  #
-            return output_file
+            os.rename(output_file, input_file)
+            return input_file
         except subprocess.CalledProcessError as e:
             # 捕获 FFmpeg 命令的返回码和输出
             rich_logger.exception(f"视频优化失败: {output_file}\n错误信息: {e.stderr.decode('utf-8')}")
