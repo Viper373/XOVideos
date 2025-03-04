@@ -326,7 +326,8 @@ class Pornhub:
             else:
                 # 下载成功
                 rich_logger.info(f"下载成功：{author_name} - {video_title}")
-                s3_utils.s4_upload_file(file_path=download_path)
+                h264_video_path = s3_utils.ffmpeg_video_streaming(input_file=download_path)
+                s3_utils.s4_upload_file(file_path=h264_video_path)
                 mongo_utils.update_download_status(video_infos, 1)
 
         except Exception as e:
