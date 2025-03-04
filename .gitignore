@@ -183,3 +183,4 @@ cython_debug/
 /.idea/misc.xml
 /.idea/modules.xml
 /.idea/material_theme_project_new.xml
+/s3_test.py
