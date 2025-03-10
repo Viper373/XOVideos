@@ -8,6 +8,7 @@
 # @Software       :PyCharm
 
 import os
+import re
 import time
 import subprocess
 import configparser
@@ -180,7 +181,7 @@ class Pornhub:
                 video_counts = self.get_video_count(tree)
 
                 if mongo_video_count == video_counts:
-                    rich_logger.info(f"{author_name} 的视频数量未更新，数据库数量：[{mongo_video_count}]，源数量：[{video_counts}]，跳过该作者")
+                    rich_logger.info(f"{author_name} 的视频数量未更新，数据库数量：[{mongo_video_count}]，源数量：[{video_counts}]丨跳过该作者")
                     continue
 
                 rich_logger.info(f"{author_name} 数据库视频数量：[{mongo_video_count}]，源视频数量：[{video_counts}]丨开始爬取")
@@ -310,9 +311,23 @@ class Pornhub:
         :return: int - 视频总数
         """
         try:
-            count_text = tree.xpath('//span[@class="videosNumber"]/text()')[0].strip()
-            digits = ''.join([char for char in count_text if char.isdigit()])
-            return int(digits)
+            # 通过 class 查找目标元素
+            count_elements = tree.xpath('//div[@class="showingCounter pornstarVideosCounter"]')
+            if not count_elements:
+                rich_logger.warning("未找到包含视频总数的元素")
+                return 0
+
+            # 获取第一个匹配元素的文本内容
+            count_text = count_elements.text.strip()
+
+            # 使用正则表达式提取数字
+            match = re.search(r"共有(\d+)个", count_text)
+            if not match:
+                rich_logger.warning("未找到视频总数数字")
+                return 0
+
+            # 返回提取的数字
+            return int(match.group(1))
         except Exception as e:
             rich_logger.warning(f"获取视频总数失败: {e}")
             return 0
