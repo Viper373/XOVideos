@@ -173,37 +173,61 @@ class Pornhub:
             author_url = author.get('作者主页')
 
             try:
+                # 从数据库获取作者文档
                 author_document = mongo_utils.mongo_db['pornhub'].find_one({"作者名称": author_name})
                 mongo_video_count = author_document.get('作者视频数量', 0) if author_document else 0
+                # 获取已有视频链接列表，用于去重
+                existing_video_urls = (
+                    [video['视频链接'] for video in author_document.get('作者视频列表', [])]
+                    if author_document else []
+                )
 
-                response = api_utils.requests_retry(url=author_url, headers=self.pre_headers, cookies=self.cookies, proxies=self.proxies, timeout=10)
+                # 请求作者主页并解析
+                response = api_utils.requests_retry(
+                    url=author_url, headers=self.pre_headers, cookies=self.cookies,
+                    proxies=self.proxies, timeout=10
+                )
                 tree = html.fromstring(response.content)
                 video_counts = self.get_video_count(tree)
 
-                if mongo_video_count == video_counts:
-                    rich_logger.info(f"{author_name} 的视频数量未更新，数据库数量：[{mongo_video_count}]，源数量：[{video_counts}]丨跳过该作者")
+                # 如果数量和链接数量都匹配，则跳过（可选优化）
+                if mongo_video_count == video_counts and len(existing_video_urls) == video_counts:
+                    rich_logger.info(
+                        f"{author_name} 的视频数量未更新，数据库数量：[{mongo_video_count}]，"
+                        f"源数量：[{video_counts}]丨跳过该作者"
+                    )
                     continue
 
-                rich_logger.info(f"{author_name} 数据库视频数量：[{mongo_video_count}]，源视频数量：[{video_counts}]丨开始爬取")
+                rich_logger.info(
+                    f"{author_name} 数据库视频数量：[{mongo_video_count}]，"
+                    f"源视频数量：[{video_counts}]丨开始爬取"
+                )
 
+                # 爬取所有页面，只收集新视频
                 total_pages = self.get_total_pages(tree)
-                video_list = []
+                new_video_list = []
                 for i in range(1, total_pages + 1):
                     page_url = author_url if i == 1 else f"{author_url}?page={i}"
-                    page_response = api_utils.requests_retry(url=page_url, headers=self.pre_headers, cookies=self.cookies, proxies=self.proxies, timeout=10)
+                    page_response = api_utils.requests_retry(
+                        url=page_url, headers=self.pre_headers, cookies=self.cookies,
+                        proxies=self.proxies, timeout=10
+                    )
                     page_tree = html.fromstring(page_response.content)
                     video_elements = page_tree.xpath('//ul[@id="mostRecentVideosSection"]//li')
                     for video in video_elements:
-                        video_info = self.extract_video_info(video)
+                        video_info = self.extract_video_info(video, existing_video_urls)
                         if video_info:
-                            video_list.append(video_info)
+                            new_video_list.append(video_info)
 
-                author_info = {
-                    "作者视频数量": video_counts,
-                    "作者视频列表": video_list
-                }
-                mongo_utils.update_author_info(author_name, author_info)
-                rich_logger.info(f"{author_name} 的视频信息更新成功，共 {video_counts} 个视频")
+                # 如果有新视频，更新数据库
+                if new_video_list:
+                    mongo_utils.update_author_info(author_name, new_video_list, video_counts)
+                    rich_logger.info(
+                        f"{author_name} 的视频信息更新成功，新增 {len(new_video_list)} 个视频，"
+                        f"总视频数 {video_counts}"
+                    )
+                else:
+                    rich_logger.info(f"{author_name} 没有新视频，跳过更新")
 
             except Exception as e:
                 rich_logger.error(f"获取{author_name}的视频信息错误: {e}")
@@ -364,11 +388,11 @@ class Pornhub:
         rich_logger.error(f"获取下载链接失败，已达到最大重试次数: {video_url}")
         return None
 
-    def extract_video_info(self, video):
+    def extract_video_info(self, video, existing_video_urls):
+        """提取视频信息，仅返回新视频"""
         try:
             video_url = urljoin(self.index_url, video.xpath('.//a/@href')[0])
-            existing_video = mongo_utils.mongo_db['pornhub'].find_one({"作者视频列表.视频链接": video_url})
-            if existing_video:
+            if video_url in existing_video_urls:
                 rich_logger.info(f"视频 {video_url} 已存在，跳过")
                 return None
             video_title = sanitize_filename(video.xpath('.//a/@title')[0])
@@ -379,9 +403,11 @@ class Pornhub:
                 "视频标题": video_title,
                 "视频封面": video_cover,
                 "视频链接": video_url,
+                "下载链接": "",
                 "视频时长": video_duration,
                 "视频观看次数": video_views,
-                "下载状态": 0
+                "下载状态": 0,
+                "封面状态": 0
             }
         except Exception as e:
             rich_logger.warning(f"提取视频信息失败: {e}")
