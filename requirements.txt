@@ -8,3 +8,5 @@ boto3==1.36.26
 botocore==1.36.26
 redis==5.2.1
 dotenv==0.9.9
+aiohttp==3.11.13
+asyncio==3.4.3
