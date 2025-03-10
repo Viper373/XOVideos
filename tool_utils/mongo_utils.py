@@ -12,18 +12,19 @@ from pymongo.mongo_client import MongoClient
 from pymongo import UpdateOne
 from pymongo.server_api import ServerApi
 from tool_utils.log_utils import RichLogger
+from dotenv import load_dotenv
 
 rich_logger = RichLogger()
+root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+load_dotenv(os.path.join(root_dir, '.env'))
 
 
 class MongoConfig:
     def __init__(self):
-        # MongoDB 连接地址
         self.mongo_connect_host = os.getenv('MONGODB_URI')
 
 
 class MongoUtils:
-
     def __init__(self):
         mongo_config = MongoConfig()
         host = mongo_config.mongo_connect_host
@@ -35,34 +36,20 @@ class MongoUtils:
         self.mongo_db = self.mongo_client[self.mongo_db_name]
 
     def init_author_info(self, author_list: list, collection="pornhub", batch_size=200):
-        """
-        更新作者信息
-        :param author_list: 作者信息列表
-        :param collection: 集合名称
-        :param batch_size: 批量写入的数量
-        :return: None
-        """
         bulk_ops = []
         mongo_col = self.mongo_db[collection]
-
-        # 确保 author_list 不为空
         if not author_list:
             rich_logger.warning("没有获取到任何作者信息，跳过更新")
             return
-
         for author in author_list:
             try:
                 author_id = author.get('author_id')
                 author_name = author.get('author_name')
                 author_avatar = author.get('author_avatar')
                 author_url = author.get('author_url')
-
-                # 确保必要字段存在
                 if not author_name or not author_avatar or not author_url:
                     rich_logger.warning(f"缺少必要的作者信息：{author}")
-                    continue  # 跳过当前作者，继续处理下一个
-
-                # 添加到bulk_ops列表中
+                    continue
                 bulk_ops.append(
                     UpdateOne(
                         {"作者名称": author_name},
@@ -73,46 +60,32 @@ class MongoUtils:
                                 "作者头像": author_avatar,
                             },
                         },
-                        upsert=True  # 如果没有找到该作者，插入新文档
+                        upsert=True
                     )
                 )
                 rich_logger.info(f"成功添加/更新作者信息：{author_name}")
-
             except Exception as e:
                 rich_logger.error(f"处理{author.get('author_name')}信息失败：{e}")
-
         if bulk_ops:
             try:
                 for i in range(0, len(bulk_ops), batch_size):
-                    # 分批执行写入操作，避免一次性写入太多导致内存问题
                     batch = bulk_ops[i:i + batch_size]
                     mongo_col.bulk_write(batch)
                     rich_logger.info(f"已成功初始化 {min(i + batch_size, len(bulk_ops))} 个作者信息")
             except Exception as e:
                 rich_logger.error(f"批量写入操作失败: {e}")
-
         else:
             rich_logger.warning("没有有效的操作，跳过写入。")
 
     def get_author_urls(self, collection="pornhub"):
-        """
-        获取所有作者名称和主页链接
-        :param collection: 集合名称
-        :return: author_url_list - 作者信息字典列表
-        """
         author_url_list = []
         mongo_col = self.mongo_db[collection]
-
         try:
-            # 查询所有包含"作者名称"和"作者主页"字段的文档
             cursor = mongo_col.find({"作者名称": {"$exists": True}, "作者主页": {"$exists": True}})
-
             for doc in cursor:
                 author_name = doc.get("作者名称")
                 author_url = doc.get("作者主页")
                 author_id = doc.get("作者ID")
-
-                # 检查作者名称和主页链接是否有效
                 if author_name and author_url:
                     author_url_list.append({
                         "作者名称": author_name,
@@ -121,52 +94,31 @@ class MongoUtils:
                     })
                 else:
                     rich_logger.warning(f"作者信息不完整，跳过: {doc}")
-
             if not author_url_list:
                 rich_logger.warning("没有找到任何有效的作者信息。")
-
         except Exception as e:
             rich_logger.error(f"获取作者信息时发生错误: {e}")
-
         return author_url_list
 
     def update_author_info(self, author_name, author_info, collection="pornhub", batch_size=200):
-        """
-        更新作者信息（作者视频信息）
-        :param author_name: 作者名称
-        :param author_info: 作者的详细信息字典，包括视频数量、视频列表等
-        :param collection: 集合名称
-        :param batch_size: 批量写入的数量
-        :return: None
-        """
         bulk_ops = []
         mongo_col = self.mongo_db[collection]
-
-        # 构建更新操作
         try:
-            # 确保视频数量被正确更新（不累加）
             if "作者视频数量" in author_info:
-                author_info["作者视频数量"] = author_info["作者视频数量"]  # 保证使用最新的值
-
+                author_info["作者视频数量"] = author_info["作者视频数量"]
             bulk_ops.append(
                 UpdateOne(
-                    {"作者名称": author_name},  # 使用作者名称作为查询条件
-                    {
-                        "$set": author_info  # 设置更新内容，包括主页、头像、视频信息等
-                    },
-                    upsert=True  # 如果没有该作者，则插入新文档
+                    {"作者名称": author_name},
+                    {"$set": author_info},
+                    upsert=True
                 )
             )
             rich_logger.info(f"成功更新：{author_name}视频列表")
-
         except Exception as e:
             rich_logger.error(f"更新{author_name}视频列表失败: {e}")
-
-        # 执行批量写入
         if bulk_ops:
             try:
                 for i in range(0, len(bulk_ops), batch_size):
-                    # 分批执行写入操作，避免一次性写入太多导致内存问题
                     batch = bulk_ops[i:i + batch_size]
                     mongo_col.bulk_write(batch)
                     rich_logger.info(f"已成功批量更新{author_name}作者信息")
@@ -174,27 +126,65 @@ class MongoUtils:
                 rich_logger.error(f"批量写入数据库失败: {e}")
 
     def update_download_status(self, video_infos, download_status, collection="pornhub"):
-        """
-        更新视频下载状态
-        :param video_infos: 视频信息列表
-        :param download_status: 下载状态
-        :param collection: 集合名称
-        :return: None
-        """
         mongo_col = self.mongo_db[collection]
         author_name = video_infos.get("作者名称")
         video_url = video_infos.get("视频链接")
         video_title = video_infos.get("视频标题")
         try:
             mongo_col.update_one(
-                {"作者视频列表.视频链接": video_url},  # 查询条件：视频链接匹配
-                {
-                    "$set": {
-                        "作者视频列表.$[elem].下载状态": download_status  # 更新满足条件的数组元素的下载状态
-                    }
-                },
-                array_filters=[{"elem.视频链接": video_url}]  # 使用 arrayFilters 过滤匹配到的视频链接
+                {"作者视频列表.视频链接": video_url},
+                {"$set": {"作者视频列表.$[elem].下载状态": download_status}},
+                array_filters=[{"elem.视频链接": video_url}]
             )
             rich_logger.info(f"成功更新视频下载状态：[{download_status}]丨{author_name}丨{video_title}")
         except Exception as e:
             rich_logger.error(f"更新视频下载状态失败：{e}")
+
+    def get_all_cover_info(self, collection="pornhub"):
+        cover_info_list = []
+        try:
+            cursor = self.mongo_db[collection].find(
+                {"作者视频列表.封面状态": {"$in": [0, 2]}},
+                {"作者名称": 1, "作者视频列表": 1}
+            )
+            for doc in cursor:
+                author_name = doc.get("作者名称")
+                video_list = doc.get("作者视频列表", [])
+                for video in video_list:
+                    if video.get("封面状态") in [0, 2]:
+                        video_title = video.get("视频标题")
+                        cover_url = video.get("视频封面")
+                        video_url = video.get("视频链接")
+                        if author_name and video_title and cover_url and video_url:
+                            cover_info_list.append({
+                                "作者名称": author_name,
+                                "视频标题": video_title,
+                                "视频封面": cover_url,
+                                "视频链接": video_url
+                            })
+            rich_logger.info(f"成功获取 {len(cover_info_list)} 个待处理视频封面信息")
+        except Exception as e:
+            rich_logger.error(f"获取视频封面信息失败: {e}")
+        return cover_info_list
+
+    def update_cover_status(self, author_name, video_url, new_status, collection="pornhub"):
+        mongo_col = self.mongo_db[collection]
+        try:
+            video_doc = mongo_col.find_one(
+                {"作者名称": author_name, "作者视频列表.视频链接": video_url},
+                {"作者视频列表.$": 1}
+            )
+            video_title = "未知视频"
+            if video_doc and "作者视频列表" in video_doc and len(video_doc["作者视频列表"]) > 0:
+                video_title = video_doc["作者视频列表"][0].get("视频标题", "未知视频")
+            result = mongo_col.update_one(
+                {"作者名称": author_name, "作者视频列表.视频链接": video_url},
+                {"$set": {"作者视频列表.$[elem].封面状态": new_status}},
+                array_filters=[{"elem.视频链接": video_url}]
+            )
+            if result.modified_count > 0:
+                rich_logger.info(f"成功更新封面状态为[{new_status}]丨{author_name} - {video_title}")
+            else:
+                rich_logger.warning(f"未找到匹配的视频，更新失败丨{author_name} - {video_title}")
+        except Exception as e:
+            rich_logger.error(f"更新封面状态失败：{e}")

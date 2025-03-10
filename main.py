@@ -7,8 +7,10 @@
 # @Blog           :https://blog.viper3.top
 # @Software       :PyCharm
 
-from run_task.run import Run
+from run_task.run import Run, CoverRun
 
 if __name__ == '__main__':
     run = Run()
     run.run()
+    # run_cover = CoverRun()  # 封面爬取（单独运行即可）
+    # run_cover.run()
