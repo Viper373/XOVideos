@@ -100,30 +100,17 @@ class MongoUtils:
             rich_logger.error(f"获取作者信息时发生错误: {e}")
         return author_url_list
 
-    def update_author_info(self, author_name, author_info, collection="pornhub", batch_size=200):
-        bulk_ops = []
+    def update_author_info(self, author_name, author_info, collection="pornhub"):
         mongo_col = self.mongo_db[collection]
         try:
-            if "作者视频数量" in author_info:
-                author_info["作者视频数量"] = author_info["作者视频数量"]
-            bulk_ops.append(
-                UpdateOne(
-                    {"作者名称": author_name},
-                    {"$set": author_info},
-                    upsert=True
-                )
+            mongo_col.update_one(
+                {"作者名称": author_name},
+                {"$set": author_info},
+                upsert=True
             )
             rich_logger.info(f"成功更新：{author_name}视频列表")
         except Exception as e:
             rich_logger.error(f"更新{author_name}视频列表失败: {e}")
-        if bulk_ops:
-            try:
-                for i in range(0, len(bulk_ops), batch_size):
-                    batch = bulk_ops[i:i + batch_size]
-                    mongo_col.bulk_write(batch)
-                    rich_logger.info(f"已成功批量更新{author_name}作者信息")
-            except Exception as e:
-                rich_logger.error(f"批量写入数据库失败: {e}")
 
     def update_download_status(self, video_infos, download_status, collection="pornhub"):
         mongo_col = self.mongo_db[collection]
