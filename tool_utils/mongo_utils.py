@@ -100,15 +100,19 @@ class MongoUtils:
             rich_logger.error(f"获取作者信息时发生错误: {e}")
         return author_url_list
 
-    def update_author_info(self, author_name, author_info, collection="pornhub"):
+    # 在 mongo_utils.py 中
+    def update_author_info(self, author_name, new_video_list, video_counts, collection="pornhub"):
         mongo_col = self.mongo_db[collection]
         try:
             mongo_col.update_one(
                 {"作者名称": author_name},
-                {"$set": author_info},
+                {
+                    "$set": {"作者视频数量": video_counts},
+                    "$push": {"作者视频列表": {"$each": new_video_list}}
+                },
                 upsert=True
             )
-            rich_logger.info(f"成功更新：{author_name}视频列表")
+            rich_logger.info(f"成功更新：{author_name}视频列表，新增 {len(new_video_list)} 个视频")
         except Exception as e:
             rich_logger.error(f"更新{author_name}视频列表失败: {e}")
 
