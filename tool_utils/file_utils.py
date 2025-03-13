@@ -32,8 +32,47 @@ class S3Utils:
         )
 
     @rich_logger
+    def check_s3_file_exists(self, file_path):
+        """
+        检查文件在 S3 上是否已存在
+        :param file_path: 本地文件路径
+        :return: 存在返回 True，不存在返回 False
+        """
+        try:
+            # 将路径替换为统一的单斜杠
+            unified_path = file_path.replace("\\", "/")
+            # 分割路径
+            parts = unified_path.split("/")
+            xovideos_indices = [i for i, part in enumerate(parts) if part == "XOVideos"]
+
+            # 防御性检查
+            if len(xovideos_indices) < 2:
+                rich_logger.error(f"路径中未找到足够的 'XOVideos' 目录: {file_path}")
+                return False
+                
+            videos_index = xovideos_indices[1]
+            s3_key = "/".join(parts[videos_index:])
+
+            # 检查文件是否存在
+            try:
+                self.s3_client.head_object(Bucket=self.bucket, Key=s3_key)
+                rich_logger.info(f"文件已存在于 S3: {s3_key}")
+                return True
+            except ClientError as e:
+                error_code = e.response['Error'].get('Code', 'Unknown')
+                if error_code == '404':
+                    rich_logger.info(f"文件不存在于 S3: {s3_key}")
+                    return False
+                else:
+                    rich_logger.error(f"检查 S3 文件时出错 ({error_code}): {e}")
+                    return False
+                    
+        except Exception as e:
+            rich_logger.error(f"检查 S3 文件时发生未知错误: {e}")
+            return False
+
+    @rich_logger
     def s4_upload_file(self, file_path, delete_on_success=True, delete_on_failure=False):
-        start_time = time.time()
 
         try:
             # 路径合规性检查
@@ -47,17 +86,13 @@ class S3Utils:
             parts = unified_path.split("/")
             xovideos_indices = [i for i, part in enumerate(parts) if part == "XOVideos"]
 
-            # 防御性检查
-            if len(xovideos_indices) < 2:
-                rich_logger.error(f"路径中未找到足够的 'XOVideos' 目录: {file_path}")
-                return False
-            videos_index = xovideos_indices[1]
+            videos_index = xovideos_indices[1]  # 获取第二个 "XOVideos" 的索引
             s3_key = "/".join(parts[videos_index:])
 
             # 检查文件是否存在
             try:
                 self.s3_client.head_object(Bucket=self.bucket, Key=s3_key)
-                rich_logger.info(f"文件已存在，跳过上传: {s3_key}")
+                rich_logger.info(f"S4文件已存在，跳过上传: {s3_key}")
 
                 if delete_on_success:
                     try:
@@ -85,7 +120,7 @@ class S3Utils:
                 file_size /= 1024.0
                 size_index += 1
             size_str = f"{int(file_size)} {size_units[size_index]}" if size_index == 0 else f"{file_size:.2f} {size_units[size_index]}".rstrip('0').rstrip('.')
-            rich_logger.info(f"开始上传: {s3_key}，大小: {size_str}")
+            rich_logger.info(f"S4开始上传: {s3_key}，大小: {size_str}")
 
             # 执行上传
             self.s3_client.upload_file(
@@ -94,7 +129,7 @@ class S3Utils:
                 Key=s3_key,
                 ExtraArgs=extra_args
             )
-            rich_logger.info(f"上传成功: {s3_key}")
+            rich_logger.info(f"S4上传成功: {s3_key}")
 
             # 上传成功后删除本地文件
             if delete_on_success:
@@ -106,7 +141,7 @@ class S3Utils:
 
         except ClientError as e:
             error_code = e.response['Error'].get('Code', 'Unknown')
-            rich_logger.error(f"上传失败 ({error_code}): {e}")
+            rich_logger.error(f"S4上传失败 ({error_code}): {e}")
             if delete_on_failure:
                 try:
                     os.remove(file_path)
@@ -114,7 +149,7 @@ class S3Utils:
                     rich_logger.error(f"删除本地文件失败: {err}")
             return False
         except Exception as e:
-            rich_logger.exception(f"未知错误: {e}")
+            rich_logger.exception(f"S4未知错误: {e}")
             if delete_on_failure:
                 try:
                     os.remove(file_path)

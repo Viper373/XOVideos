@@ -274,19 +274,35 @@ class Pornhub:
             author_name = video_infos.get('作者名称')
             video_title = video_infos.get('视频标题')
             download_path = os.path.join(self.video_dir, author_name, f"{video_title}.mp4")
+            
+            # 确保作者目录存在
+            os.makedirs(os.path.dirname(download_path), exist_ok=True)
 
-            # 判断文件是否已经存在
+            # 先检查 S3 上是否已存在该文件
+            if s3_utils.check_s3_file_exists(download_path):
+                rich_logger.info(f"S3 上已存在文件: {author_name} - {video_title}，跳过下载和转换")
+                mongo_utils.update_download_status(video_infos, 1)  # 更新为已下载状态
+                return
+
+            # 判断本地文件是否已经存在
             if os.path.exists(download_path):
-                rich_logger.info(f"{download_path} 已经存在，跳过下载。")
+                rich_logger.info(f"{download_path} 已经存在，进行转换和上传")
+                # 进行 ffmpeg 转换
                 h264_video_path = s3_utils.ffmpeg_video_streaming(input_file=download_path)
-                upload_success = s3_utils.s4_upload_file(file_path=h264_video_path)
-                if upload_success:
-                    mongo_utils.update_download_status(video_infos, 1)
+                if h264_video_path:
+                    # 上传到 S3
+                    upload_success = s3_utils.s4_upload_file(file_path=h264_video_path)
+                    if upload_success:
+                        mongo_utils.update_download_status(video_infos, 1)
+                    else:
+                        rich_logger.error(f"文件存在但上传失败: {author_name} - {video_title}")
+                        mongo_utils.update_download_status(video_infos, 2)
                 else:
-                    rich_logger.error(f"文件存在但上传失败: {author_name} - {video_title}")
+                    rich_logger.error(f"文件转换失败: {author_name} - {video_title}")
                     mongo_utils.update_download_status(video_infos, 2)
                 return
 
+            # 文件不存在，需要下载
             self.command[1] = download_url
             self.command[-1] = download_path
 
@@ -297,13 +313,19 @@ class Pornhub:
                 rich_logger.error(f"下载失败: {author_name} - {video_title}， 错误信息：{result.stderr}")
                 mongo_utils.update_download_status(video_infos, 2)
             else:
+                # 下载成功，进行转换
                 h264_video_path = s3_utils.ffmpeg_video_streaming(input_file=download_path)
-                upload_success = s3_utils.s4_upload_file(file_path=h264_video_path)
-                if upload_success:
-                    rich_logger.info(f"下载并上传成功：{author_name} - {video_title}")
-                    mongo_utils.update_download_status(video_infos, 1)
+                if h264_video_path:
+                    # 上传到 S3
+                    upload_success = s3_utils.s4_upload_file(file_path=h264_video_path)
+                    if upload_success:
+                        rich_logger.info(f"下载并上传成功：{author_name} - {video_title}")
+                        mongo_utils.update_download_status(video_infos, 1)
+                    else:
+                        rich_logger.error(f"上传失败: {author_name} - {video_title}")
+                        mongo_utils.update_download_status(video_infos, 2)
                 else:
-                    rich_logger.error(f"上传失败: {author_name} - {video_title}")
+                    rich_logger.error(f"文件转换失败: {author_name} - {video_title}")
                     mongo_utils.update_download_status(video_infos, 2)
 
         except Exception as e:
