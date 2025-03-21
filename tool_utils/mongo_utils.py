@@ -86,11 +86,13 @@ class MongoUtils:
                 author_name = doc.get("作者名称")
                 author_url = doc.get("作者主页")
                 author_id = doc.get("作者ID")
+                author_videos_count = doc.get("作者视频数量")
                 if author_name and author_url:
                     author_url_list.append({
                         "作者名称": author_name,
                         "作者主页": author_url,
                         "作者ID": author_id,
+                        "作者视频数量": author_videos_count
                     })
                 else:
                     rich_logger.warning(f"作者信息不完整，跳过: {doc}")

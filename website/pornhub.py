@@ -170,7 +170,7 @@ class Pornhub:
         for author in author_urls:
             author_name = author.get('作者名称')
             author_url = author.get('作者主页')
-
+            author_videos_count = author.get('作者视频数量')
             try:
                 author_document = mongo_utils.mongo_db['pornhub'].find_one({"作者名称": author_name})
                 if not author_document or '作者视频列表' not in author_document:
@@ -190,11 +190,11 @@ class Pornhub:
                     video_counts += int(tree.xpath('count(//ul[@id="mostRecentVideosSection"]//li)'))
 
                 # 判断是否需要爬取
-                if len(mongo_video_list) == video_counts:
+                if len(mongo_video_list) == video_counts == author_videos_count:
                     rich_logger.info(f"{author_name} 的视频数量未更新，跳过该作者")
                     continue
 
-                rich_logger.info(f"{author_name}数据库视频数量：[{len(mongo_video_list)}]，源视频数量：[{video_counts}]丨开始爬取")
+                rich_logger.info(f"{author_name}数据库视频数量：[{len(mongo_video_list)}]，源视频数量：[{video_counts}]，作者视频数量字段：[{author_videos_count}]丨开始爬取")
 
                 # 爬取新视频
                 new_videos = []
