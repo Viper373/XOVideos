@@ -44,13 +44,8 @@ class S3Utils:
             # 分割路径
             parts = unified_path.split("/")
             xovideos_indices = [i for i, part in enumerate(parts) if part == "XOVideos"]
-
-            # 防御性检查
-            if len(xovideos_indices) < 2:
-                rich_logger.error(f"路径中未找到足够的 'XOVideos' 目录: {file_path}")
-                return False
                 
-            videos_index = xovideos_indices[1]
+            videos_index = xovideos_indices[1]  # 获取第二个 "XOVideos" 的索引
             s3_key = "/".join(parts[videos_index:])
 
             # 检查文件是否存在
