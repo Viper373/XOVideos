@@ -25,12 +25,24 @@ class AllCover:
 
     @rich_logger
     def run_cover(self):
-        """启动封面上传流程"""
+        """
+        启动封面上传流程
+        """
         self.ph_cover_process()
 
     @staticmethod
     async def batch_upload_cover_urls(cover_info_list, gh_utils, mongo_utils, max_concurrency=5, retries=3, delay=2):
-        """批量异步上传封面"""
+        """
+        批量异步上传封面
+        """
+
+        async def is_url_accessible(session, url, headers):
+            try:
+                async with session.head(url, headers=headers, timeout=5) as response:
+                    return response.status == 200
+            except Exception:
+                return False
+
         semaphore = asyncio.Semaphore(max_concurrency)
 
         async def upload_with_semaphore(cover_info):
@@ -39,7 +51,15 @@ class AllCover:
                 video_title = cover_info["视频标题"]
                 cover_url = cover_info["视频封面"]
                 video_url = cover_info["视频链接"]
-
+                if not author_name:
+                    rich_logger.error(f"作者名称为空，跳过上传: {video_title} - {cover_url}")
+                    mongo_utils.update_cover_status(author_name, video_url, 2)
+                    return False
+                # 检查 URL 有效性
+                if not await is_url_accessible(session, cover_url, gh_utils.ph_headers):
+                    rich_logger.error(f"封面 URL 无效或不可访问: {cover_url}")
+                    mongo_utils.update_cover_status(author_name, video_url, 2)
+                    return False
                 # 清理标题中的非法字符
                 safe_title = re.sub(r'[\/:*?"<>|]', '_', video_title)
 
@@ -49,7 +69,7 @@ class AllCover:
                     file_extension = 'jpg'
 
                 # 构建目标路径
-                target_path = f"{author_name}/{safe_title}.{file_extension}"
+                target_path = f"{author_name}/{safe_title}"
 
                 # 尝试上传
                 success = await gh_utils.async_upload_from_url(session, cover_url, target_path, retries=retries, delay=delay)
@@ -65,9 +85,11 @@ class AllCover:
             await asyncio.gather(*tasks, return_exceptions=True)
 
     def ph_cover_process(self):
-        """处理封面上传"""
+        """
+        处理封面上传
+        """
         cover_info_list = mongo_utils.get_all_cover_info()
         if not cover_info_list:
             rich_logger.warning("未找到任何视频封面信息，退出操作")
             return
-        asyncio.run(self.batch_upload_cover_urls(cover_info_list, gh_utils, mongo_utils, retries=3, delay=2))
+        asyncio.run(self.batch_upload_cover_urls(cover_info_list, gh_utils, mongo_utils, max_concurrency=3, retries=3, delay=2))

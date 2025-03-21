@@ -23,7 +23,6 @@ from tool_utils.mongo_utils import MongoUtils
 from tool_utils.proxy_utils import ProxyUtils
 from tool_utils.file_utils import S3Utils
 
-
 rich_logger = RichLogger()
 string_utils = StringUtils()
 api_utils = APIUtils()
@@ -219,7 +218,7 @@ class Pornhub:
 
                 # 更新数据库
                 if new_videos:
-                    mongo_utils.update_author_info(author_name, new_videos)
+                    mongo_utils.update_author_info(author_name, new_videos, len(mongo_video_list))
                     rich_logger.info(f"{author_name} 的视频信息更新成功，新增 {len(new_videos)} 个视频")
 
             except Exception as e:
@@ -274,7 +273,7 @@ class Pornhub:
             author_name = video_infos.get('作者名称')
             video_title = video_infos.get('视频标题')
             download_path = os.path.join(self.video_dir, author_name, f"{video_title}.mp4")
-            
+
             # 确保作者目录存在
             os.makedirs(os.path.dirname(download_path), exist_ok=True)
 
