@@ -36,20 +36,36 @@ class MongoUtils:
         self.mongo_db = self.mongo_client[self.mongo_db_name]
 
     def init_author_info(self, author_list: list, collection="pornhub", batch_size=200):
-        bulk_ops = []
         mongo_col = self.mongo_db[collection]
         if not author_list:
             rich_logger.warning("没有获取到任何作者信息，跳过更新")
             return
+
+        # 获取所有作者名称，用于批量查询
+        author_names = [author.get('author_name') for author in author_list if author.get('author_name')]
+
+        # 查询数据库中已存在的作者
+        existing_authors = set(mongo_col.distinct("作者名称", {"作者名称": {"$in": author_names}}))
+
+        bulk_ops = []
         for author in author_list:
             try:
                 author_id = author.get('author_id')
                 author_name = author.get('author_name')
                 author_avatar = author.get('author_avatar')
                 author_url = author.get('author_url')
+
+                # 检查必要字段是否齐全
                 if not author_name or not author_avatar or not author_url:
                     rich_logger.warning(f"缺少必要的作者信息：{author}")
                     continue
+
+                # 如果作者已存在，跳过初始化
+                if author_name in existing_authors:
+                    rich_logger.info(f"作者 {author_name} 已经存在，跳过初始化")
+                    continue
+
+                # 对不存在的作者，准备插入操作
                 bulk_ops.append(
                     UpdateOne(
                         {"作者名称": author_name},
@@ -60,12 +76,15 @@ class MongoUtils:
                                 "作者头像": author_avatar,
                             },
                         },
-                        upsert=True
+                        upsert=True  # 保留 upsert=True，确保插入新作者
                     )
                 )
-                rich_logger.info(f"成功添加/更新作者信息：{author_name}")
+                rich_logger.info(f"准备初始化作者信息：{author_name}")
+
             except Exception as e:
-                rich_logger.error(f"处理{author.get('author_name')}信息失败：{e}")
+                rich_logger.error(f"处理 {author.get('author_name', '未知作者')} 信息失败：{e}")
+
+        # 执行批量写入
         if bulk_ops:
             try:
                 for i in range(0, len(bulk_ops), batch_size):
@@ -75,7 +94,7 @@ class MongoUtils:
             except Exception as e:
                 rich_logger.error(f"批量写入操作失败: {e}")
         else:
-            rich_logger.warning("没有有效的操作，跳过写入。")
+            rich_logger.warning("没有需要初始化的作者，跳过写入。")
 
     def get_author_urls(self, collection="pornhub"):
         author_url_list = []

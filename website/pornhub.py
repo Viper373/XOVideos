@@ -139,7 +139,7 @@ class Pornhub:
                     author_avatar = author.xpath('.//a[@data-type="user"]//img[@class="avatar avatarTrigger"]/@src')[0]
                     author_name = author.xpath('.//a[@class="usernameLink"]//@title')[0]
 
-                    rich_logger.info(f"作者名：{author_name}, 主页：{author_url}")
+                    rich_logger.info(f"作者名：{author_name}丨主页：{author_url}")
 
                     # 生成每个作者的字典信息，并添加到author_list
                     author_info = {
