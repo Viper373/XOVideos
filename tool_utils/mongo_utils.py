@@ -100,13 +100,11 @@ class MongoUtils:
             rich_logger.error(f"获取作者信息时发生错误: {e}")
         return author_url_list
 
-    def update_author_info(self, author_name, new_videos, collection="pornhub"):
+    def update_author_info(self, author_name, new_videos, current_video_list_length, collection="pornhub"):
         mongo_col = self.mongo_db[collection]
         try:
-            # 获取当前视频数量
-            author_doc = mongo_col.find_one({"作者名称": author_name})
-            current_video_count = author_doc.get('作者视频数量', 0) if author_doc else 0
-            new_video_count = current_video_count + len(new_videos)
+            # 计算新的视频总数
+            new_video_count = current_video_list_length + len(new_videos)
 
             # 更新视频数量
             mongo_col.update_one(
@@ -115,11 +113,11 @@ class MongoUtils:
                 upsert=True,
             )
 
-            # 追加新视频
-            for video in new_videos:
+            # 如果有新视频，一次性追加到视频列表
+            if new_videos:
                 mongo_col.update_one(
                     {"作者名称": author_name},
-                    {"$push": {"作者视频列表": video}}
+                    {"$push": {"作者视频列表": {"$each": new_videos}}}
                 )
 
             rich_logger.info(f"成功更新：{author_name}视频列表，新增 {len(new_videos)} 个视频")
@@ -145,14 +143,14 @@ class MongoUtils:
         cover_info_list = []
         try:
             cursor = self.mongo_db[collection].find(
-                {"作者视频列表.封面状态": {"$in": [0, 2]}},
+                {"作者视频列表": {"$elemMatch": {"封面状态": {"$in": [0, 2]}, "封面重试次数": {"$lt": 5}}}},
                 {"作者名称": 1, "作者视频列表": 1}
             )
             for doc in cursor:
                 author_name = doc.get("作者名称")
                 video_list = doc.get("作者视频列表", [])
                 for video in video_list:
-                    if video.get("封面状态") in [0, 2]:
+                    if video.get("封面状态") in [0, 2] and video.get("封面重试次数", 0) < 5:
                         video_title = video.get("视频标题")
                         cover_url = video.get("视频封面")
                         video_url = video.get("视频链接")
@@ -175,17 +173,22 @@ class MongoUtils:
                 {"作者名称": author_name, "作者视频列表.视频链接": video_url},
                 {"作者视频列表.$": 1}
             )
-            video_title = "未知视频"
-            if video_doc and "作者视频列表" in video_doc and len(video_doc["作者视频列表"]) > 0:
-                video_title = video_doc["作者视频列表"][0].get("视频标题", "未知视频")
+            video_title = video_doc["作者视频列表"][0].get("视频标题", "未知视频") if video_doc else "未知视频"
+            current_retry_count = video_doc["作者视频列表"][0].get("封面重试次数", 0) if video_doc else 0
+            new_retry_count = current_retry_count + 1 if new_status == 2 else 0
             result = mongo_col.update_one(
                 {"作者名称": author_name, "作者视频列表.视频链接": video_url},
-                {"$set": {"作者视频列表.$[elem].封面状态": new_status}},
+                {
+                    "$set": {
+                        "作者视频列表.$[elem].封面状态": new_status,
+                        "作者视频列表.$[elem].封面重试次数": new_retry_count
+                    }
+                },
                 array_filters=[{"elem.视频链接": video_url}]
             )
             if result.modified_count > 0:
-                rich_logger.info(f"成功更新封面状态为[{new_status}]丨{author_name} - {video_title}")
+                rich_logger.info(f"成功更新封面状态为[{new_status}]，重试次数[{new_retry_count}]丨{author_name} - {video_title}")
             else:
-                rich_logger.warning(f"未找到匹配的视频，更新失败丨{author_name} - {video_title}")
+                rich_logger.warning(f"未找到匹配的视频，更新失败丨{author_name} - {video_url}")
         except Exception as e:
-            rich_logger.error(f"更新封面状态失败：{e}")
+            rich_logger.error(f"更新封面状态失败：{e}丨{author_name} - {video_url}")

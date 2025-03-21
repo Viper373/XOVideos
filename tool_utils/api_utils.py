@@ -12,6 +12,7 @@ import base64
 import requests
 import asyncio
 import aiohttp
+import mimetypes
 from dotenv import load_dotenv
 from requests.exceptions import RequestException
 from tool_utils.log_utils import RichLogger
@@ -80,7 +81,9 @@ class GitHubUtils:
         }
 
     async def async_upload_from_url(self, session, image_url, target_path, retries=3, delay=2):
-        """异步从URL下载图片并上传到GitHub"""
+        """
+        异步从URL下载图片并上传到GitHub
+        """
         attempt = 0
         while attempt < retries:
             try:
@@ -88,6 +91,11 @@ class GitHubUtils:
                 async with session.get(image_url, headers=self.ph_headers, timeout=aiohttp.ClientTimeout(total=10)) as response:
                     if response.status == 200:
                         content = await response.read()
+                        content_type = response.headers.get('Content-Type')
+                        file_extension = mimetypes.guess_extension(content_type) or '.jpg'
+                        # 确保 target_path 使用正确的扩展名
+                        if not target_path.endswith(file_extension):
+                            target_path = target_path.rsplit('.', 1)[0] + file_extension
                         break
                     else:
                         raise Exception(f"下载图片失败，状态码: {response.status}")
@@ -120,12 +128,18 @@ class GitHubUtils:
             if response.status not in [200, 201]:
                 rich_logger.error(f"上传失败: {await response.text()}")
                 return False
+            if response.status == 403:
+                rich_logger.error("可能触发 GitHub API 速率限制，等待 60 秒后重试...")
+                await asyncio.sleep(60)
+                return False  # 让调用方重试
 
         rich_logger.info(f"上传成功: {self._get_cdn_url(target_path)}")
         return True
 
     async def _async_get_existing_sha(self, session, path):
-        """异步获取文件的SHA值（如果文件已存在）"""
+        """
+        异步获取文件的SHA值（如果文件已存在）
+        """
         try:
             async with session.get(f"{self.api_base}{path}", headers=self.gh_headers) as response:
                 if response.status == 200:
