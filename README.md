@@ -1,3 +1,4 @@
+![XOVideos](https://socialify.git.ci/Viper373/XOVideos/image?description=1&font=Inter&forks=1&issues=1&logo=https%3A%2F%2Fimg.viper3.top%2FXOVideos%2Flogo.png&name=1&owner=1&pattern=Circuit+Board&pulls=1&stargazers=1&theme=Light)
 # XOVideos 📥
 
 XOVideos 是一个为用户打造的个性化视频下载工具，专注于提供“关注、订阅、喜爱”等功能，帮助用户轻松下载自己喜欢的内容。 目前，项目仅支持 **Pornhub**站，后续会逐步兼容其他平台，如 **Telegram** 等。
