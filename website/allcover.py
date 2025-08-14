@@ -53,12 +53,12 @@ class AllCover:
                 video_url = cover_info["视频链接"]
                 if not author_name:
                     rich_logger.error(f"作者名称为空，跳过上传: {video_title} - {cover_url}")
-                    mongo_utils.update_cover_status(author_name, video_url, 2)
+                    mongo_utils.update_cover_status(author_name, video_url, 2, collection="pornhub")
                     return False
                 # 检查 URL 有效性
                 if not await is_url_accessible(session, cover_url, gh_utils.ph_headers):
                     rich_logger.error(f"封面 URL 无效或不可访问: {cover_url}")
-                    mongo_utils.update_cover_status(author_name, video_url, 2)
+                    mongo_utils.update_cover_status(author_name, video_url, 2, collection="pornhub")
                     return False
                 # 清理标题中的非法字符
                 safe_title = re.sub(r'[\/:*?"<>|]', '_', video_title)
@@ -76,7 +76,7 @@ class AllCover:
 
                 # 更新MongoDB状态
                 new_status = 1 if success else 2
-                mongo_utils.update_cover_status(author_name, video_url, new_status)
+                mongo_utils.update_cover_status(author_name, video_url, new_status, collection="pornhub")
 
                 return success
 
@@ -88,7 +88,7 @@ class AllCover:
         """
         处理封面上传
         """
-        cover_info_list = mongo_utils.get_all_cover_info()
+        cover_info_list = mongo_utils.get_all_cover_info(collection="pornhub")
         if not cover_info_list:
             rich_logger.warning("未找到任何视频封面信息，退出操作")
             return
