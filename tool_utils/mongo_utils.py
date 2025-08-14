@@ -35,7 +35,7 @@ class MongoUtils:
         self.mongo_db_name = 'XOVideos'
         self.mongo_db = self.mongo_client[self.mongo_db_name]
 
-    def init_author_info(self, author_list: list, collection="pornhub", batch_size=200):
+    def init_author_info(self, author_list: list, collection=None, batch_size=200):
         mongo_col = self.mongo_db[collection]
         if not author_list:
             rich_logger.warning("没有获取到任何作者信息，跳过更新")
@@ -50,13 +50,11 @@ class MongoUtils:
         bulk_ops = []
         for author in author_list:
             try:
-                author_id = author.get('author_id')
                 author_name = author.get('author_name')
-                author_avatar = author.get('author_avatar')
                 author_url = author.get('author_url')
 
                 # 检查必要字段是否齐全
-                if not author_name or not author_avatar or not author_url:
+                if not author_name or not author_url:
                     rich_logger.warning(f"缺少必要的作者信息：{author}")
                     continue
 
@@ -71,9 +69,7 @@ class MongoUtils:
                         {"作者名称": author_name},
                         {
                             "$set": {
-                                "作者ID": author_id,
                                 "作者主页": author_url,
-                                "作者头像": author_avatar,
                             },
                         },
                         upsert=True  # 保留 upsert=True，确保插入新作者
@@ -94,9 +90,9 @@ class MongoUtils:
             except Exception as e:
                 rich_logger.error(f"批量写入操作失败: {e}")
         else:
-            rich_logger.warning("没有需要初始化的作者，跳过写入。")
+            rich_logger.info("没有需要初始化的作者，跳过写入。")
 
-    def get_author_urls(self, collection="pornhub"):
+    def get_author_urls(self, collection=None):
         author_url_list = []
         mongo_col = self.mongo_db[collection]
         try:
@@ -121,7 +117,7 @@ class MongoUtils:
             rich_logger.error(f"获取作者信息时发生错误: {e}")
         return author_url_list
 
-    def update_author_info(self, author_name, new_videos, current_video_list_length, collection="pornhub"):
+    def update_author_info(self, author_name, new_videos, current_video_list_length, collection=None):
         mongo_col = self.mongo_db[collection]
         try:
             # 计算新的视频总数
@@ -145,7 +141,7 @@ class MongoUtils:
         except Exception as e:
             rich_logger.error(f"更新{author_name}视频列表失败: {e}")
 
-    def update_download_status(self, video_infos, download_status, collection="pornhub"):
+    def update_download_status(self, video_infos, download_status, collection=None):
         mongo_col = self.mongo_db[collection]
         author_name = video_infos.get("作者名称")
         video_url = video_infos.get("视频链接")
@@ -160,7 +156,7 @@ class MongoUtils:
         except Exception as e:
             rich_logger.error(f"更新视频下载状态失败：{e}")
 
-    def get_all_cover_info(self, collection="pornhub"):
+    def get_all_cover_info(self, collection=None):
         cover_info_list = []
         try:
             cursor = self.mongo_db[collection].find(
@@ -187,7 +183,7 @@ class MongoUtils:
             rich_logger.error(f"获取视频封面信息失败: {e}")
         return cover_info_list
 
-    def update_cover_status(self, author_name, video_url, new_status, collection="pornhub"):
+    def update_cover_status(self, author_name, video_url, new_status, collection=None):
         mongo_col = self.mongo_db[collection]
         try:
             video_doc = mongo_col.find_one(

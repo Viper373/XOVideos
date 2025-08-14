@@ -52,12 +52,10 @@ class APIUtils:
                     rich_logger.error(f"请求失败: {response.status_code} | URL: {url}")
             except RequestException as e:
                 rich_logger.error(f"请求出错: {e} | 尝试 {attempt + 1}/{retries} 次，URL: {url}")
-
             attempt += 1
             if attempt < retries:
                 rich_logger.info(f"重试请求，等待 {delay} 秒... (尝试 {attempt + 1}/{retries})")
                 time.sleep(delay)
-
         rich_logger.error(f"请求失败，已达到最大重试次数: {url}")
         return None
 

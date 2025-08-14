@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# @Project   :td_gsc_scraper
+# @Project   :td_gsc_sc_scraper
 # @FileName  :file_utils.py
 # @Time      :2024/10/11 11:00
 # @Author    :Zhangjinzhao
@@ -32,6 +32,7 @@ class S3Utils:
         )
 
     @rich_logger
+    @rich_logger
     def check_s3_file_exists(self, file_path):
         """
         检查文件在 S3 上是否已存在
@@ -44,9 +45,13 @@ class S3Utils:
             # 分割路径
             parts = unified_path.split("/")
             xovideos_indices = [i for i, part in enumerate(parts) if part == "XOVideos"]
-                
-            videos_index = xovideos_indices[1]  # 获取第二个 "XOVideos" 的索引
-            s3_key = "/".join(parts[videos_index:])
+
+            if len(xovideos_indices) < 1:  # 修改为检查至少一个 "XOVideos"
+                rich_logger.error(f"无效的文件路径: {unified_path}")
+                return False
+
+            videos_index = xovideos_indices[0]  # 修改为获取第一个 "XOVideos" 的索引
+            s3_key = "/".join(parts[videos_index + 1:])  # +1 以跳过 "XOVideos"，得到 "videos/pornhub/author/title.mp4"
 
             # 检查文件是否存在
             try:
@@ -61,7 +66,7 @@ class S3Utils:
                 else:
                     rich_logger.error(f"检查 S3 文件时出错 ({error_code}): {e}")
                     return False
-                    
+
         except Exception as e:
             rich_logger.error(f"检查 S3 文件时发生未知错误: {e}")
             return False
@@ -80,6 +85,10 @@ class S3Utils:
             # 分割路径
             parts = unified_path.split("/")
             xovideos_indices = [i for i, part in enumerate(parts) if part == "XOVideos"]
+
+            if len(xovideos_indices) < 2:
+                rich_logger.error(f"无效的文件路径: {unified_path}")
+                return False
 
             videos_index = xovideos_indices[1]  # 获取第二个 "XOVideos" 的索引
             s3_key = "/".join(parts[videos_index:])
